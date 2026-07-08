@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Testing Dashboard</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0f172a, #1e1b4b, #0f172a);
+      background-size: 200% 200%;
+      animation: gradientShift 15s ease infinite;
+      color: #f8fafc;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+    }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .container {
+      width: 100%;
+      max-width: 800px;
+      background: rgba(30, 41, 59, 0.4);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      padding: 3rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .container::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.5), transparent);
+    }
+
+    header {
+      margin-bottom: 2.5rem;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      background: linear-gradient(to right, #a78bfa, #c084fc, #e879f9);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+
+    p.subtitle {
+      color: #94a3b8;
+      font-size: 1.1rem;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 2rem;
+    }
+
+    button {
+      background: linear-gradient(135deg, #8b5cf6, #d946ef);
+      color: white;
+      border: none;
+      padding: 1rem 2rem;
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(217, 70, 239, 0.3);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    button::after {
+      content: '';
+      position: absolute;
+      top: -50%; left: -50%; width: 200%; height: 200%;
+      background: rgba(255,255,255,0.1);
+      transform: rotate(45deg);
+      transition: transform 0.6s ease;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(217, 70, 239, 0.4);
+    }
+
+    button:hover::after {
+      transform: rotate(45deg) translate(50%, 50%);
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    .response-area {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: 1.5rem;
+      min-height: 200px;
+      position: relative;
+    }
+
+    .status-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .status-label {
+      font-size: 0.9rem;
+      color: #64748b;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.4rem 0.8rem;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      background: rgba(100, 116, 139, 0.2);
+      color: #94a3b8;
+      border: 1px solid rgba(100, 116, 139, 0.3);
+      transition: all 0.3s ease;
+    }
+
+    .status-badge.success {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border-color: rgba(16, 185, 129, 0.3);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+    }
+
+    .status-badge.error {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border-color: rgba(239, 68, 68, 0.3);
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
+    }
+
+    pre {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
+      color: #e2e8f0;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      line-height: 1.5;
+    }
+
+    .json-key { color: #7dd3fc; }
+    .json-string { color: #a7f3d0; }
+    .json-number { color: #fca5a5; }
+    .json-boolean { color: #fde047; }
+
+    /* Loader */
+    .loader {
+      display: none;
+      width: 24px;
+      height: 24px;
+      border: 3px solid rgba(255,255,255,0.1);
+      border-radius: 50%;
+      border-top-color: #d946ef;
+      animation: spin 1s ease-in-out infinite;
+      margin: 2rem auto;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>API Testing Playground</h1>
+      <p class="subtitle">Understand HTTP Methods & Responses</p>
+    </header>
+
+    <div class="controls">
+      <button id="getProductsBtn">GET Products</button>
+    </div>
+
+    <div class="response-area">
+      <div class="status-header">
+        <span class="status-label">Response Status</span>
+        <span class="status-badge" id="statusBadge">Waiting...</span>
+      </div>
+      
+      <div class="loader" id="loader"></div>
+      <pre id="jsonOutput"><span style="color: #64748b;">// Click the button to fetch /api/products...</span></pre>
+    </div>
+  </div>
+
+  <script>
+    // Simple syntax highlighter for JSON
+    function syntaxHighlight(json) {
+      if (typeof json != 'string') {
+        json = JSON.stringify(json, undefined, 2);
+      }
+      json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+        let cls = 'json-number';
+        if (/^"/.test(match)) {
+          if (/:$/.test(match)) {
+            cls = 'json-key';
+          } else {
+            cls = 'json-string';
+          }
+        } else if (/true|false/.test(match)) {
+          cls = 'json-boolean';
+        } else if (/null/.test(match)) {
+          cls = 'json-boolean';
+        }
+        return '<span class="' + cls + '">' + match + '</span>';
+      });
+    }
+
+    document.getElementById('getProductsBtn').addEventListener('click', async () => {
+      const output = document.getElementById('jsonOutput');
+      const badge = document.getElementById('statusBadge');
+      const loader = document.getElementById('loader');
+
+      // Reset UI
+      output.innerHTML = '';
+      loader.style.display = 'block';
+      badge.textContent = 'Fetching...';
+      badge.className = 'status-badge';
+
+      try {
+        // Simulate a tiny bit of network latency for effect
+        await new Promise(resolve => setTimeout(resolve, 600));
+
+        const response = await fetch('/api/products');
+        const data = await response.json();
+        
+        // Update badge
+        badge.textContent = `${response.status} ${response.statusText || 'OK'}`;
+        if (response.ok) {
+          badge.className = 'status-badge success';
+        } else {
+          badge.className = 'status-badge error';
+        }
+
+        // Display formatted JSON
+        loader.style.display = 'none';
+        output.innerHTML = syntaxHighlight(data);
+
+      } catch (error) {
+        loader.style.display = 'none';
+        badge.textContent = 'Error';
+        badge.className = 'status-badge error';
+        output.innerHTML = `<span style="color: #f87171;">Failed to fetch: ${error.message}</span>`;
+      }
+    });
+  </script>
+</body>
+</html>
