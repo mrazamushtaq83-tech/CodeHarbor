@@ -1,55 +1,67 @@
-const { readTable, writeTable } = require('../config/database');
-const { v4: uuidv4 } = require('uuid');
+const { supabase } = require('../config/database');
 
 const TABLE_NAME = 'images';
 
-function getAllImages() {
-  return readTable(TABLE_NAME);
+async function getAllImages() {
+  const { data, error } = await supabase.from(TABLE_NAME).select('*');
+  if (error) throw error;
+  return data;
 }
 
-function getImageById(id) {
-  const images = getAllImages();
-  return images.find(img => img.id === id);
+async function getImageById(id) {
+  const { data, error } = await supabase
+    .from(TABLE_NAME)
+    .select('*')
+    .eq('id', id)
+    .single();
+  if (error && error.code !== 'PGRST116') throw error;
+  return data || null;
 }
 
-function getImagesByUserId(userId) {
-  const images = getAllImages();
-  return images.filter(img => img.user_id === userId);
+async function getImagesByUserId(userId) {
+  const { data, error } = await supabase
+    .from(TABLE_NAME)
+    .select('*')
+    .eq('user_id', userId);
+  if (error) throw error;
+  return data;
 }
 
-function createImage(imageData) {
-  const images = getAllImages();
-  const newImage = {
-    id: uuidv4(),
-    user_id: imageData.user_id,
-    prompt_text: imageData.prompt_text,
-    image_url: imageData.image_url || null,
-    status: imageData.status || 'pending',
-    model_used: imageData.model_used || 'replicate-default',
-    created_at: new Date().toISOString()
-  };
-  images.push(newImage);
-  writeTable(TABLE_NAME, images);
-  return newImage;
+async function createImage(imageData) {
+  const { data, error } = await supabase
+    .from(TABLE_NAME)
+    .insert([
+      {
+        user_id: imageData.user_id,
+        prompt_text: imageData.prompt_text,
+        image_url: imageData.image_url || null,
+        status: imageData.status || 'pending',
+        model_used: imageData.model_used || 'replicate-default'
+      }
+    ])
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
 }
 
-function updateImage(id, updates) {
-  const images = getAllImages();
-  const index = images.findIndex(img => img.id === id);
-  if (index === -1) return null;
-  
-  images[index] = { ...images[index], ...updates };
-  writeTable(TABLE_NAME, images);
-  return images[index];
+async function updateImage(id, updates) {
+  const { data, error } = await supabase
+    .from(TABLE_NAME)
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+  if (error && error.code !== 'PGRST116') throw error;
+  return data || null;
 }
 
-function deleteImage(id) {
-  let images = getAllImages();
-  const initialLength = images.length;
-  images = images.filter(img => img.id !== id);
-  if (images.length === initialLength) return false;
-  
-  writeTable(TABLE_NAME, images);
+async function deleteImage(id) {
+  const { error } = await supabase
+    .from(TABLE_NAME)
+    .delete()
+    .eq('id', id);
+  if (error) return false;
   return true;
 }
 

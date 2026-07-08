@@ -1,44 +1,17 @@
-const fs = require('fs');
-const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
+require('dotenv').config();
 
-const DB_PATH = process.env.JSON_DB_PATH || path.join(__dirname, '..', 'database.json');
+const supabaseUrl = process.env.SUPABASE_URL;
+// Use service_role key to bypass RLS; fall back to anon key for dev
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
 
-// Initialize database if it doesn't exist
-function initDB() {
-  if (!fs.existsSync(DB_PATH)) {
-    const initialData = {
-      users: [],
-      images: [],
-      transactions: []
-    };
-    fs.writeFileSync(DB_PATH, JSON.stringify(initialData, null, 2), 'utf-8');
-    console.log('Initialized JSON Database at', DB_PATH);
-  }
+if (!supabaseUrl || !supabaseKey) {
+  console.warn("WARNING: SUPABASE_URL or Supabase API key is missing in environment variables.");
 }
 
-// Read a table from the JSON file
-function readTable(tableName) {
-  if (!fs.existsSync(DB_PATH)) {
-    initDB();
-  }
-  const dataRaw = fs.readFileSync(DB_PATH, 'utf-8');
-  const db = JSON.parse(dataRaw);
-  return db[tableName] || [];
-}
-
-// Write a table back to the JSON file
-function writeTable(tableName, tableData) {
-  if (!fs.existsSync(DB_PATH)) {
-    initDB();
-  }
-  const dataRaw = fs.readFileSync(DB_PATH, 'utf-8');
-  const db = JSON.parse(dataRaw);
-  db[tableName] = tableData;
-  fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2), 'utf-8');
-}
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 module.exports = {
-  initDB,
-  readTable,
-  writeTable
+  supabase
 };
+

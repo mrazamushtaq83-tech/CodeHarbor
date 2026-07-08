@@ -1,46 +1,59 @@
-const { readTable, writeTable } = require('../config/database');
-const { v4: uuidv4 } = require('uuid');
+const { supabase } = require('../config/database');
 
 const TABLE_NAME = 'transactions';
 
-function getAllTransactions() {
-  return readTable(TABLE_NAME);
+async function getAllTransactions() {
+  const { data, error } = await supabase.from(TABLE_NAME).select('*');
+  if (error) throw error;
+  return data;
 }
 
-function getTransactionById(id) {
-  const transactions = getAllTransactions();
-  return transactions.find(t => t.id === id);
+async function getTransactionById(id) {
+  const { data, error } = await supabase
+    .from(TABLE_NAME)
+    .select('*')
+    .eq('id', id)
+    .single();
+  if (error && error.code !== 'PGRST116') throw error;
+  return data || null;
 }
 
-function getTransactionsByUserId(userId) {
-  const transactions = getAllTransactions();
-  return transactions.filter(t => t.user_id === userId);
+async function getTransactionsByUserId(userId) {
+  const { data, error } = await supabase
+    .from(TABLE_NAME)
+    .select('*')
+    .eq('user_id', userId);
+  if (error) throw error;
+  return data;
 }
 
-function createTransaction(transactionData) {
-  const transactions = getAllTransactions();
-  const newTransaction = {
-    id: uuidv4(),
-    user_id: transactionData.user_id,
-    amount: transactionData.amount, // in cents
-    credits_purchased: transactionData.credits_purchased,
-    stripe_payment_id: transactionData.stripe_payment_id || null,
-    status: transactionData.status || 'pending',
-    created_at: new Date().toISOString()
-  };
-  transactions.push(newTransaction);
-  writeTable(TABLE_NAME, transactions);
-  return newTransaction;
+async function createTransaction(transactionData) {
+  const { data, error } = await supabase
+    .from(TABLE_NAME)
+    .insert([
+      {
+        user_id: transactionData.user_id,
+        amount: transactionData.amount, // in cents
+        credits_purchased: transactionData.credits_purchased,
+        stripe_payment_id: transactionData.stripe_payment_id || null,
+        status: transactionData.status || 'pending'
+      }
+    ])
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
 }
 
-function updateTransaction(id, updates) {
-  const transactions = getAllTransactions();
-  const index = transactions.findIndex(t => t.id === id);
-  if (index === -1) return null;
-  
-  transactions[index] = { ...transactions[index], ...updates };
-  writeTable(TABLE_NAME, transactions);
-  return transactions[index];
+async function updateTransaction(id, updates) {
+  const { data, error } = await supabase
+    .from(TABLE_NAME)
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+  if (error && error.code !== 'PGRST116') throw error;
+  return data || null;
 }
 
 module.exports = {

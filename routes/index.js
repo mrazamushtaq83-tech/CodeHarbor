@@ -1,18 +1,19 @@
 const express = require('express');
 const router = express.Router();
 
-// Basic health-check route
-router.get('/health', (req, res) => {
-  res.json({ status: 'ok' });
-});
+// Import all resource routers
+const userRoutes = require('./users');
+const imageRoutes = require('./images');
+const transactionRoutes = require('./transactions');
 
-// Sample products route for testing
-router.get('/products', (req, res) => {
-  res.json([
-    { id: 1, name: "Cyberpunk Cityscape Image", price: 5, type: "image" },
-    { id: 2, name: "Abstract Neural Network Art", price: 3, type: "image" },
-    { id: 3, name: "Neon Portrait Pack", price: 10, type: "bundle" }
-  ]);
+// Mount resource routes
+router.use('/users', userRoutes);
+router.use('/images', imageRoutes);
+router.use('/transactions', transactionRoutes);
+
+// Health check
+router.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 module.exports = router;
