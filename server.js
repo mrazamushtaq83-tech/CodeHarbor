@@ -9,10 +9,7 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static('public'));
 
-// Test API page
-app.get('/test-api', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'test-api.html'));
-});
+
 
 // Mount all API routes under /api
 const apiRoutes = require('./routes/index');
